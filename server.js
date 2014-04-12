@@ -36,7 +36,7 @@ function insertTemp(data){
 
 // Read current temperature from sensor
 function readTemp(callback){
-   fs.readFile('/sys/bus/w1/devices/28-00000400a88a/w1_slave', function(err, buffer)
+   fs.readFile('./stub.txt', function(err, buffer)
 	{
       if (err){
          console.error(err);
@@ -44,14 +44,14 @@ function readTemp(callback){
       }
 
       // Read data from file (using fast node ASCII encoding).
-      var data = buffer.toString('ascii').split(" "); // Split by space
+      // var data = buffer.toString('ascii').split(" "); // Split by space
 
       // Extract temperature from string and divide by 1000 to give celsius
-      var temp  = parseFloat(data[data.length-1].split("=")[1])/1000.0;
-
+      // var temp  = parseFloat(data[data.length-1].split("=")[1])/1000.0;
+	  temp = (Math.random() * 100) % 40;
       // Round to one decimal place
       temp = Math.round(temp * 10) / 10;
-
+	  console.log("temp: " + temp);
       // Add date/time to temperature
    	var data = {
             temperature_record:[{
