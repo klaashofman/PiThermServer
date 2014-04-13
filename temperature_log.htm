@@ -13,20 +13,36 @@
       // Get data from server in JSON format (query time series when sensor was outside).
       function getData(){
          $.getJSON('/temperature_query.json?num_obs=-1&start_date=2013-01-23T16:00', function(data){
-            var series = {
+            var seriesTemp = {
                id: 'series',
-               name: 'DS18B20 sensor (\u00B10.5\u00B0C)',
+               name: 'Temperature(\u00B10.5\u00B0C)',
                type: 'area',
                data: []
                };
             var i = 0;
             // Iterate JSON data series and add to plot
-            while (data.temperature_record[0][i])
-            {
-               series.data.push([data.temperature_record[0][i].unix_time, data.temperature_record[0][i].celsius]);
+            while (data.temperature_record[0][i]) {
+               seriesTemp.data.push([data.temperature_record[0][i].unix_time, 
+               		data.temperature_record[0][i].celsius]);
                i++;
             }
-         chart.addSeries(series);
+            chart.addSeries(seriesTemp);
+            
+            
+          	var seriesHum = {
+            	id: 'series',
+            	name: 'Humidity(\u00B10.5\u00B0C)',
+            	type: 'area',
+            	data: []
+            	};
+            i = 0;
+            while (data.temperature_record[0][i]) {
+               seriesHum.data.push([data.temperature_record[0][i].unix_time,  
+               		data.temperature_record[0][i].humidity]);
+               i++;
+            }
+            chart.addSeries(seriesHum);
+         
          });
       }
 	</script>
@@ -43,7 +59,7 @@
             events: {load: getData()}
                },
         title: {
-		       text: 'Plot of temperatures from Raspberry Pi logger'},
+		       text: 'Sensor Plot Data'},
         subtitle: {
                 text: 'Click and drag in the plot area to zoom in',
                 align: 'right',  
