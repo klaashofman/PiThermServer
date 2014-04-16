@@ -14,6 +14,8 @@ var fs = require('fs');
 var sys = require('sys');
 var http = require('http');
 var sqlite3 = require('sqlite3');
+var serialport = require('serialport');
+
 
 // Use node-static module to server chart for client-side dynamic graph
 var nodestatic = require('node-static');
@@ -23,6 +25,8 @@ var staticServer = new nodestatic.Server(".");
 
 // Setup database connection for logging
 var db = new sqlite3.Database('./piTemps.db');
+
+var dataInput = 'SERIAL';
 
 // Write a single temperature record in JSON format to database table.
 function insertTemp(data) {
@@ -39,31 +43,31 @@ function insertTemp(data) {
 
 // Read current temperature from sensor
 function readTemp(callback) {
-    fs.readFile('./stub.txt', function (err, buffer) {
-        if (err) {
-            console.error(err);
-            process.exit(1);
+
+    serialPort.on('open', function(meas) {
+        serialPort.write("HELP", function(){
+        });
+    });
+    serialPort.on('data', function(data, meas){
+        //console.log('>' + data.toString());
+        var meas = { hum: 0, temp: 0};
+
+        var splitted = data.toString().split(" ");
+        if (splitted.length > 3) {
+            console.log('>' + splitted);
+            console.log('H>' + splitted[2]);
+            console.log('T>' + splitted[3]);
+            meas.hum = parseInt(splitted[2]);
+            meas.temp = parseInt(splitted[3]);
         }
-
-        // Read data from file (using fast node ASCII encoding).
-        // var data = buffer.toString('ascii').split(" "); // Split by space
-
-        // Extract temperature from string and divide by 1000 to give celsius
-        // var temp  = parseFloat(data[data.length-1].split("=")[1])/1000.0;
-        var hum = ((Math.random() * 100) + 30) % 100;
-        hum = Math.round(hum * 10) / 10;
-
-        var temp = (Math.random() * 100) % 40;
-        // Round to one decimal place
-        temp = Math.round(temp * 10) / 10;
-        console.log("temp: " + temp + "hum: " + hum);
+        console.log("temp: " + meas.temp + "hum: " + meas.hum);
         // Add date/time to temperature
         var data = {
             temperature_record: [
                 {
                     unix_time: Date.now(),
-                    celsius: temp,
-                    humidity: hum
+                    celsius: meas.temp,
+                    humidity: meas.hum
                 }
             ]};
 
@@ -172,6 +176,22 @@ var server = http.createServer(
             })
         }
     });
+
+
+var SerialPort = serialport.SerialPort;
+
+var btPort = "/dev/tty.HC-05-DevB";
+var serPort = "/dev/tty.usbmodem1421";
+var port = serPort;
+
+var serialPort = new SerialPort(port, {
+    parser: serialport.parsers.readline("\n"),
+    baudrate: 38400,
+    dataBits: 8,
+    parity: 'none',
+    stopBits: 1,
+    flowControl: false
+});
 
 // Start temperature logging (every 5 min).
 var msecs = (60 * 5) * 1000; // log interval duration in milliseconds
