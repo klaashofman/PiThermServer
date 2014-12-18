@@ -3,7 +3,7 @@ var SerialPort = serialport.SerialPort;
 
 var btPort = "/dev/tty.HC-05-DevB";
 var serPort = "/dev/tty.usbmodem1411";
-var port = serPort;
+var port = btPort;
 
 var serialPort = new SerialPort(port, {
   parser: serialport.parsers.readline("\n"),
@@ -15,17 +15,18 @@ var serialPort = new SerialPort(port, {
 });
 
 serialPort.on('open', function() {
-    serialPort.write("HELP", function(){
-    });
-    serialPort.on('data', function(data) {
-        //console.log('>' + data.toString());
-        var splitted = data.toString().split(" ");
-        console.log('>' + splitted);
-        console.log('H>' + splitted[2]);
-        console.log('T>' + splitted[3]);
+    serialPort.write("SENS", function(){
     });
 });
 
+serialPort.on('data', function(data) {
+    console.log('>' + data.toString());
+    var splitted = data.toString().split(",");
+    console.log('>' + splitted);
+    console.log('H>' + splitted[0]);
+    console.log('T>' + splitted[1]);
+    serialPort.close();
+});
 
 /*
 function serialListener()

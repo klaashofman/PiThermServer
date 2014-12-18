@@ -44,35 +44,48 @@ function insertTemp(data) {
 // Read current temperature from sensor
 function readTemp(callback) {
 
-    serialPort.on('open', function(meas) {
-        serialPort.write("HELP", function(){
-        });
-    });
-    serialPort.on('data', function(data, meas){
-        //console.log('>' + data.toString());
-        var meas = { hum: 0, temp: 0};
+    var btPort = "/dev/tty.HC-05-DevB";
+    var serPort = "/dev/tty.usbmodem1421";
+    var port = btPort;
 
-        var splitted = data.toString().split(" ");
-        if (splitted.length > 3) {
-            console.log('>' + splitted);
-            console.log('H>' + splitted[2]);
-            console.log('T>' + splitted[3]);
-            meas.hum = parseInt(splitted[2]);
-            meas.temp = parseInt(splitted[3]);
+    fs.stat(port, function (err, stats) {
+        if (!err) {
+            var SerialPort = serialport.SerialPort;
+            var serialPort = new SerialPort(port, {
+                parser: serialport.parsers.readline("\n"),
+                baudrate: 38400,
+                dataBits: 8,
+                parity: 'none',
+                stopBits: 1,
+                flowControl: false
+            });
+            serialPort.on('open', function () {
+                serialPort.write("SENS", function () {
+                });
+            });
+            serialPort.on('data', function (data, meas) {
+                //console.log('>' + data.toString());
+                var meas = { hum: 0, temp: 0};
+                var splitted = data.toString().split(",");
+                console.log('H>' + splitted[0]);
+                console.log('T>' + splitted[1]);
+                meas.hum = parseInt(splitted[0]);
+                meas.temp = parseInt(splitted[1]);
+                console.log("temp: " + meas.temp + "hum: " + meas.hum);
+                // Add date/time to temperature
+                var data = {
+                    temperature_record: [
+                        {
+                            unix_time: Date.now(),
+                            celsius: meas.temp,
+                            humidity: meas.hum
+                        }
+                    ]};
+
+                // Execute call back with data
+                callback(data);
+            });
         }
-        console.log("temp: " + meas.temp + "hum: " + meas.hum);
-        // Add date/time to temperature
-        var data = {
-            temperature_record: [
-                {
-                    unix_time: Date.now(),
-                    celsius: meas.temp,
-                    humidity: meas.hum
-                }
-            ]};
-
-        // Execute call back with data
-        callback(data);
     });
 };
 
@@ -177,21 +190,6 @@ var server = http.createServer(
         }
     });
 
-
-var SerialPort = serialport.SerialPort;
-
-var btPort = "/dev/tty.HC-05-DevB";
-var serPort = "/dev/tty.usbmodem1421";
-var port = serPort;
-
-var serialPort = new SerialPort(port, {
-    parser: serialport.parsers.readline("\n"),
-    baudrate: 38400,
-    dataBits: 8,
-    parity: 'none',
-    stopBits: 1,
-    flowControl: false
-});
 
 // Start temperature logging (every 5 min).
 var msecs = (60 * 5) * 1000; // log interval duration in milliseconds
